@@ -1,0 +1,2479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Name — AI 视觉创意 & Prompt 设计师</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+SC:wght@300;400;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ═══════════════════════════════════════════
+       TOKENS & RESET
+    ═══════════════════════════════════════════ */
+    :root {
+      --bg:       #06060f;
+      --bg2:      #0d0d1c;
+      --bg3:      #12122a;
+      --lime:     #b8ff57;
+      --cyan:     #4fd8ff;
+      --magenta:  #ff57a8;
+      --text:     #f0efe8;
+      --muted:    #7a7a88;
+      --border:   rgba(255,255,255,0.07);
+      --radius:   16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    .skip-link {
+      position: fixed;
+      top: -40px;
+      left: 12px;
+      z-index: 1200;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: var(--lime);
+      color: var(--bg);
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: top 0.2s ease;
+    }
+
+    .skip-link:focus-visible {
+      top: 12px;
+    }
+
+    a:focus-visible,
+    button:focus-visible,
+    [role="button"]:focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 3px;
+    }
+
+    /* ═══════════════════════════════════════════
+       MOUSE GLOW — screen blend, won't wash text/img
+    ═══════════════════════════════════════════ */
+    #mouse-glow {
+      position: fixed;
+      top: 0; left: 0;
+      width: 500px; height: 500px;
+      pointer-events: none;
+      z-index: 9999;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(78,180,255,0.13) 0%, rgba(184,255,87,0.06) 40%, transparent 70%);
+      transform: translate(-50%, -50%);
+      mix-blend-mode: screen;
+      transition: width 0.3s, height 0.3s;
+      will-change: transform;
+    }
+    /* hide original mouse glow; replaced by ClickSpark */
+    #mouse-glow { display: none !important; }
+
+    /* ═══════════════════════════════════════════
+       LIVING CANVAS BACKGROUND
+    ═══════════════════════════════════════════ */
+    #life-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.55;
+    }
+
+    /* ═══════════════════════════════════════════
+       NAVIGATION
+    ═══════════════════════════════════════════ */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 3rem;
+      background: rgba(6,6,15,0.6);
+      backdrop-filter: blur(20px);
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .nav-logo {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--lime);
+      text-decoration: none;
+      position: relative;
+    }
+
+    .nav-logo::after {
+      content: '';
+      position: absolute;
+      bottom: -2px; left: 0;
+      width: 0; height: 1.5px;
+      background: var(--lime);
+      transition: width 0.3s ease;
+    }
+
+    .nav-logo:hover::after { width: 100%; }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      transition: color 0.25s;
+      position: relative;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -3px; left: 0;
+      width: 0; height: 1px;
+      background: var(--cyan);
+      transition: width 0.25s ease;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a:hover::after { width: 100%; }
+
+    /* ═══════════════════════════════════════════
+       HERO SECTION
+    ═══════════════════════════════════════════ */
+    #hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 3rem;
+      overflow: hidden;
+    }
+
+    .hero-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      color: var(--lime);
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.8s 0.3s forwards;
+    }
+
+    .hero-name {
+      font-size: clamp(3.5rem, 9vw, 8rem);
+      font-weight: 800;
+      line-height: 0.95;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeUp 0.9s 0.5s forwards;
+    }
+
+    .animated-gradient-text {
+      position: relative;
+      display: inline-block;
+      max-width: fit-content;
+      font-weight: inherit;
+    }
+
+    .animated-gradient-text .text-content {
+      display: inline-block;
+      background-image: linear-gradient(
+        to bottom right,
+        #f0efe8,
+        #e2e2dd,
+        #b8ff57,
+        #8cff7b,
+        #4fd8ff,
+        #b8ff57,
+        #f0efe8
+      );
+      background-size: 300% 300%;
+      background-repeat: repeat;
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      animation: heroGradientFlow 3s linear infinite alternate;
+    }
+
+    @keyframes heroGradientFlow {
+      from { background-position: 0% 50%; }
+      to { background-position: 100% 50%; }
+    }
+
+    .hero-role {
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      font-weight: 400;
+      color: var(--muted);
+      margin-bottom: 3rem;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.8s 0.75s forwards;
+    }
+
+    .hero-role .rotating-word {
+      color: var(--cyan);
+      font-weight: 600;
+    }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0.85rem 2rem;
+      background: var(--lime);
+      color: var(--bg);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      border: none;
+      border-radius: 50px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+      opacity: 0;
+      animation: fadeUp 0.8s 1s forwards;
+      align-self: flex-start;
+    }
+
+    .hero-cta:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 8px 32px rgba(184,255,87,0.35);
+    }
+
+    .hero-cta:active { transform: scale(0.97); }
+
+    .hero-badge {
+      position: absolute;
+      left: 3rem;
+      bottom: 3rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      animation: fadeUp 1s 1.3s both;
+    }
+
+    .pulse-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--lime);
+      animation: pulseDot 2s infinite;
+    }
+
+    @keyframes pulseDot {
+      0%,100% { box-shadow: 0 0 0 0 rgba(184,255,87,0.5); }
+      50%      { box-shadow: 0 0 0 8px rgba(184,255,87,0); }
+    }
+
+    .scroll-hint {
+      position: absolute;
+      left: 50%;
+      bottom: 2.5rem;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      opacity: 0;
+      animation: fadeUp 0.8s 1.5s forwards;
+    }
+
+    .scroll-hint span {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+    }
+
+    .scroll-line {
+      width: 1px; height: 50px;
+      background: linear-gradient(to bottom, var(--muted), transparent);
+      animation: scrollLine 2s infinite;
+    }
+
+    @keyframes scrollLine {
+      0%   { transform: scaleY(0); transform-origin: top; opacity: 1; }
+      50%  { transform: scaleY(1); transform-origin: top; opacity: 1; }
+      51%  { transform: scaleY(1); transform-origin: bottom; }
+      100% { transform: scaleY(0); transform-origin: bottom; opacity: 0.3; }
+    }
+
+    /* Hero floating tags */
+    .hero-tag {
+      position: absolute;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      padding: 4px 10px;
+      border: 0.5px solid var(--border);
+      border-radius: 20px;
+      color: var(--muted);
+      pointer-events: none;
+      animation: floatTag 6s ease-in-out infinite;
+    }
+
+    .hero-tag:nth-child(1) { top: 25%; right: 8%; animation-delay: 0s; }
+    .hero-tag:nth-child(2) { top: 40%; right: 12%; animation-delay: 1.2s; }
+    .hero-tag:nth-child(3) { top: 55%; right: 6%; animation-delay: 2.4s; }
+    .hero-tag:nth-child(4) { top: 30%; right: 20%; animation-delay: 0.8s; }
+
+    @keyframes floatTag {
+      0%,100% { transform: translateY(0px); opacity: 0.4; }
+      50%      { transform: translateY(-12px); opacity: 0.8; }
+    }
+
+    /* ═══════════════════════════════════════════
+       SECTION COMMONS
+    ═══════════════════════════════════════════ */
+    section {
+      position: relative;
+      z-index: 1;
+      padding: 7rem 3rem;
+    }
+
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--lime);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-label::before {
+      content: '';
+      width: 30px; height: 1px;
+      background: var(--lime);
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ═══════════════════════════════════════════
+       ABOUT SECTION
+    ═══════════════════════════════════════════ */
+    #about {
+      background: var(--bg2);
+      border-top: 0.5px solid var(--border);
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 5rem;
+      align-items: center;
+      max-width: 1100px;
+      margin: 3rem auto 0;
+    }
+
+    /* Avatar */
+    .avatar-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .avatar-ring {
+      position: relative;
+      width: 200px; height: 200px;
+    }
+
+    .avatar-ring svg {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      animation: spinRing 8s linear infinite;
+    }
+
+    @keyframes spinRing {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    .avatar-img {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--bg3);
+      border: 2px solid var(--bg3);
+    }
+
+    /* ← REPLACE SRC WITH YOUR ACTUAL AVATAR IMAGE */
+    .avatar-img img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Placeholder when no image set */
+    .avatar-placeholder {
+      width: 100%; height: 100%;
+      background: linear-gradient(135deg, #1a1a35, #0d2a3a);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .avatar-placeholder svg { opacity: 0.4; }
+
+    .avatar-placeholder span {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    .avatar-pulse {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      border: 1px solid var(--cyan);
+      animation: avatarPulse 3s ease-out infinite;
+      pointer-events: none;
+    }
+
+    .avatar-pulse:nth-child(2) { animation-delay: 1s; }
+    .avatar-pulse:nth-child(3) { animation-delay: 2s; }
+
+    @keyframes avatarPulse {
+      0%   { transform: translate(-50%,-50%) scale(1); opacity: 0.6; }
+      100% { transform: translate(-50%,-50%) scale(1.8); opacity: 0; }
+    }
+
+    .avatar-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--lime);
+    }
+
+    /* About text */
+    .about-text { }
+
+    .about-text h2 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+      line-height: 1.15;
+    }
+
+    .about-text h2 em {
+      font-style: normal;
+      color: var(--cyan);
+    }
+
+    .about-text p {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 15px;
+      line-height: 1.9;
+      color: rgba(240,239,232,0.75);
+      margin-bottom: 1.2rem;
+    }
+
+    .about-skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 2rem;
+    }
+
+    .skill-tag {
+      padding: 5px 14px;
+      border: 0.5px solid var(--border);
+      border-radius: 30px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.03);
+      transition: border-color 0.25s, color 0.25s, transform 0.2s;
+    }
+
+    .skill-tag:hover {
+      border-color: var(--lime);
+      color: var(--lime);
+      transform: translateY(-2px);
+    }
+
+    /* ═══════════════════════════════════════════
+       GALLERY SECTION
+    ═══════════════════════════════════════════ */
+    #works { max-width: 1300px; margin: 0 auto; }
+
+    .works-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 3rem;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 6px;
+    }
+
+    .filter-btn {
+      padding: 6px 18px;
+      border: 0.5px solid var(--border);
+      border-radius: 30px;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.04em;
+    }
+
+    .filter-btn:hover,
+    .filter-btn.active {
+      background: var(--lime);
+      color: var(--bg);
+      border-color: var(--lime);
+    }
+
+    /* Gallery grid */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+    }
+
+    .gallery-card {
+      position: relative;
+      border-radius: var(--radius);
+      overflow: hidden;
+      aspect-ratio: 4/5;
+      cursor: pointer;
+      transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.4s;
+      border: 0.5px solid var(--border);
+    }
+
+    .gallery-card[hidden] {
+      display: none;
+    }
+
+    .gallery-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
+      z-index: 10;
+    }
+
+    .gallery-card:active {
+      transform: translateY(-4px) scale(0.99);
+    }
+
+    /* Card visual / placeholder background */
+    .card-visual {
+      width: 100%; height: 100%;
+      position: absolute;
+      top: 0; left: 0;
+    }
+
+    /* each card gets unique gradient */
+    .card-visual-1 {
+      background: radial-gradient(ellipse at 40% 30%, #3d2a2a 0%, #1a0d18 50%, #080816 100%),
+                  linear-gradient(135deg, rgba(245,200,180,0.08) 0%, transparent 60%);
+    }
+    .card-visual-1::before {
+      content: '';
+      position: absolute;
+      top: 20%; left: 30%;
+      width: 120px; height: 180px;
+      border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+      background: linear-gradient(180deg, rgba(245,220,200,0.15), rgba(200,160,140,0.05));
+      filter: blur(20px);
+    }
+
+    .card-visual-2 {
+      background: radial-gradient(ellipse at 50% 60%, #0a0a15 0%, #050510 100%);
+    }
+    .card-visual-2::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at 70% 40%, rgba(255,120,30,0.2) 0%, transparent 60%);
+    }
+
+    .card-visual-3 {
+      background: radial-gradient(ellipse at 30% 70%, #0a1a2a 0%, #050510 100%);
+    }
+    .card-visual-3::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at 50% 40%, rgba(220,60,60,0.25) 0%, transparent 50%),
+                  radial-gradient(ellipse at 30% 70%, rgba(30,100,220,0.2) 0%, transparent 50%);
+    }
+
+    .card-visual-4 {
+      background: radial-gradient(ellipse at 50% 30%, #2a0a08 0%, #0a050a 100%);
+    }
+    .card-visual-4::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at 50% 20%, rgba(255,190,50,0.3) 0%, transparent 50%),
+                  radial-gradient(ellipse at 50% 80%, rgba(180,20,20,0.3) 0%, transparent 50%);
+    }
+
+    .card-visual-5 {
+      background: radial-gradient(ellipse at 50% 50%, #010a15 0%, #020408 100%);
+    }
+    .card-visual-5::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(0,180,255,0.15) 0%, transparent 55%),
+                  radial-gradient(circle at 30% 60%, rgba(0,255,180,0.08) 0%, transparent 40%),
+                  radial-gradient(circle at 70% 40%, rgba(80,0,200,0.1) 0%, transparent 40%);
+    }
+    .card-visual-5 .jelly {
+      position: absolute;
+      border-radius: 50%;
+      animation: floatJelly 4s ease-in-out infinite;
+      opacity: 0.6;
+    }
+    .card-visual-5 .jelly:nth-child(1) {
+      width: 60px; height: 80px; top: 30%; left: 40%;
+      background: radial-gradient(ellipse, rgba(0,200,255,0.4), transparent);
+      filter: blur(4px);
+      animation-delay: 0s;
+    }
+    .card-visual-5 .jelly:nth-child(2) {
+      width: 40px; height: 55px; top: 50%; left: 25%;
+      background: radial-gradient(ellipse, rgba(120,0,255,0.3), transparent);
+      filter: blur(6px);
+      animation-delay: 1.2s;
+    }
+    .card-visual-5 .jelly:nth-child(3) {
+      width: 30px; height: 40px; top: 20%; left: 60%;
+      background: radial-gradient(ellipse, rgba(0,255,150,0.3), transparent);
+      filter: blur(5px);
+      animation-delay: 2s;
+    }
+
+    @keyframes floatJelly {
+      0%,100% { transform: translateY(0) rotate(0deg); }
+      50%      { transform: translateY(-20px) rotate(10deg); }
+    }
+
+    .card-visual-6 {
+      background: radial-gradient(ellipse at 50% 80%, #1a0d05 0%, #060408 100%);
+    }
+    .card-visual-6::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at 50% 90%, rgba(255,160,30,0.4) 0%, transparent 50%);
+      filter: blur(10px);
+    }
+
+    /* Image placeholder overlay with camera icon */
+    .card-visual .img-hint {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0.2;
+    }
+
+    .card-visual .img-hint svg { width: 28px; height: 28px; }
+
+    .card-visual .img-hint span {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: #fff;
+    }
+
+    /* Actual image (show when provided) */
+    .card-real-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      position: absolute;
+      top: 0; left: 0;
+      display: block;
+    }
+
+    /* Card overlay on hover */
+    .card-overlay {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 1.5rem;
+      background: linear-gradient(to top, rgba(6,6,15,0.97) 0%, rgba(6,6,15,0.7) 60%, transparent 100%);
+      transform: translateY(30px);
+      transition: transform 0.4s cubic-bezier(0.25,1,0.5,1), opacity 0.4s;
+      opacity: 0.85;
+    }
+
+    .gallery-card:hover .card-overlay {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .card-category {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      padding: 3px 9px;
+      border-radius: 20px;
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+
+    .cat-ec       { background: rgba(79,216,255,0.12); color: var(--cyan); }
+    .cat-marketing{ background: rgba(255,87,168,0.12); color: var(--magenta); }
+    .cat-creative { background: rgba(184,255,87,0.12); color: var(--lime); }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .card-desc {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.6;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 12px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.3s 0.1s, transform 0.3s 0.1s;
+    }
+
+    .gallery-card:hover .card-desc {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .card-view-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--lime);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.3s 0.15s, transform 0.3s 0.15s;
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 0;
+    }
+
+    .gallery-card:hover .card-view-btn {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Card shimmer on hover */
+    .card-shimmer {
+      position: absolute;
+      top: 0; left: -100%;
+      width: 50%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+      transition: left 0.6s ease;
+      pointer-events: none;
+    }
+
+    .gallery-card:hover .card-shimmer { left: 150%; }
+
+    /* ═══════════════════════════════════════════
+       MODAL / PROMPT DETAIL
+    ═══════════════════════════════════════════ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(6,6,15,0.85);
+      backdrop-filter: blur(12px);
+      z-index: 9998;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-box {
+      background: var(--bg2);
+      border: 0.5px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      max-width: 760px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 2.5rem;
+      transform: scale(0.95) translateY(10px);
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .modal-overlay.open .modal-box {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1.5rem; right: 1.5rem;
+      width: 36px; height: 36px;
+      background: var(--bg3);
+      border: 0.5px solid var(--border);
+      border-radius: 50%;
+      color: var(--muted);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, color 0.2s, transform 0.2s;
+    }
+
+    .modal-close:hover {
+      background: var(--lime);
+      color: var(--bg);
+      transform: rotate(90deg);
+    }
+
+    .modal-category {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      padding: 3px 10px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-bottom: 1rem;
+    }
+
+    .modal-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      line-height: 1.25;
+    }
+
+    .modal-concept {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .fw-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 20px;
+      margin-bottom: 1.5rem;
+    }
+
+    .fw-row { }
+
+    .fw-key {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      color: var(--lime);
+      margin-bottom: 3px;
+      text-transform: uppercase;
+    }
+
+    .fw-val {
+      font-size: 12px;
+      color: rgba(240,239,232,0.75);
+      line-height: 1.65;
+    }
+
+    .prompt-section {
+      margin-top: 1.5rem;
+      background: var(--bg3);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .prompt-section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .prompt-section-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text);
+      line-height: 1.75;
+      word-break: break-word;
+    }
+
+    .prompt-section-text.neg { color: #ff6b6b; }
+
+    /* ═══════════════════════════════════════════
+       CONTACT SECTION
+    ═══════════════════════════════════════════ */
+    #contact {
+      text-align: center;
+      background: var(--bg2);
+      border-top: 0.5px solid var(--border);
+    }
+
+    .contact-inner { max-width: 600px; margin: 0 auto; }
+
+    .contact-inner p {
+      font-size: 15px;
+      color: var(--muted);
+      margin: 1.5rem 0 3rem;
+      line-height: 1.8;
+    }
+
+    .contact-links {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 3rem;
+    }
+
+    .contact-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0.75rem 1.5rem;
+      border: 0.5px solid var(--border);
+      border-radius: 50px;
+      color: var(--muted);
+      text-decoration: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      transition: all 0.25s;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .contact-link:hover {
+      border-color: var(--lime);
+      color: var(--lime);
+      background: rgba(184,255,87,0.05);
+      transform: translateY(-2px);
+    }
+
+    .footer-copy {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: rgba(122,122,136,0.5);
+      letter-spacing: 0.08em;
+    }
+
+    /* ═══════════════════════════════════════════
+       HOVER RIPPLE
+    ═══════════════════════════════════════════ */
+    .ripple-container { position: relative; overflow: hidden; }
+
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      transform: scale(0);
+      animation: rippleAnim 0.6s linear;
+      pointer-events: none;
+    }
+
+    @keyframes rippleAnim {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    /* ═══════════════════════════════════════════
+       GLOBAL KEYFRAMES
+    ═══════════════════════════════════════════ */
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════ */
+    @media (max-width: 900px) {
+      nav { padding: 1rem 1.5rem; }
+      section { padding: 5rem 1.5rem; }
+      .about-grid { grid-template-columns: 1fr; gap: 3rem; }
+      .about-text h2 { font-size: 1.8rem; }
+      .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+      .hero-name { font-size: clamp(2.8rem, 10vw, 5rem); }
+      #hero { padding: 0 1.5rem; }
+      .hero-badge { display: none; }
+    }
+
+    @media (max-width: 600px) {
+      .gallery-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .fw-grid { grid-template-columns: 1fr; }
+      .hero-tag,
+      .scroll-hint,
+      #mouse-glow,
+      #life-canvas {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+
+      .reveal,
+      .reveal.visible,
+      .hero-eyebrow,
+      .hero-name,
+      .hero-role,
+      .hero-cta,
+      .hero-badge,
+      .scroll-hint {
+        opacity: 1;
+        transform: none;
+      }
+
+      #mouse-glow,
+      #life-canvas {
+        display: none;
+      }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 4px; }
+
+  </style>
+  <style>
+    /* CardSwap — lightweight JS variant (matches site theme) */
+    .card-swap-container {
+      position: fixed;
+      right: 3rem;
+      top: 56%; /* moved slightly lower */
+      width: 420px;
+      height: 360px;
+      transform-origin: center right;
+      perspective: 900px;
+      pointer-events: none;
+      z-index: 1100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: visible;
+      opacity: 0;
+      transform: translateY(-50%) scale(1);
+      transition: opacity 260ms ease, transform 260ms ease;
+    }
+
+    .card-swap-container.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .card-swap-container.scale-2 {
+      transform: translateY(-40%) scale(1.6); /* 20% smaller and slightly lower */
+    }
+
+    .card-swap-container .card {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 380px;
+      height: 300px;
+      border-radius: 14px;
+      border: 0.5px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.02) inset;
+      padding: 18px;
+      color: var(--text);
+      transform-style: preserve-3d;
+      will-change: transform;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(6,6,15,0.35), rgba(6,6,15,0.75));
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .card img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.85;
+      filter: saturate(1.1) brightness(0.95);
+      z-index: 0;
+    }
+
+    .card h3,
+    .card p {
+      position: relative;
+      z-index: 1;
+    }
+
+    .card h3 { margin: 0; font-size: 18px; color: var(--lime); }
+    .card p { margin: 0; color: rgba(240,239,232,0.9); font-size: 13px; line-height: 1.5; }
+
+    @media (max-width: 900px) {
+      .card-swap-container { transform: scale(0.8); right: 1.25rem; bottom: 1.25rem; }
+      .card-swap-container .card { width: 320px; height: 240px; }
+    }
+
+    @media (max-width: 600px) {
+      .card-swap-container { display: none; }
+    }
+
+    /* Gallery image interaction */
+    .card-real-img { cursor: zoom-in; }
+
+    /* Inline image preview (inserted under about text) */
+    .about-hr {
+      border: none;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+      margin: 18px 0 8px;
+    }
+    .inline-image-preview {
+      display: none;
+      margin-top: 10px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.04);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02));
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+      max-width: 920px;
+      width: 100%;
+      transition: transform 220ms ease, opacity 220ms ease;
+      opacity: 0;
+    }
+    .inline-image-preview.open {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .inline-image-preview .preview-inner {
+      position: relative;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .inline-image-preview img {
+      max-width: 100%;
+      max-height: 360px;
+      object-fit: contain;
+      display: block;
+      border-radius: 6px;
+    }
+    .inline-image-preview .preview-close {
+      position: absolute;
+      top: 8px; right: 8px;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(0,0,0,0.4); color: #fff; border: none; cursor: pointer;
+      display:flex;align-items:center;justify-content:center;font-size:18px;
+    }
+    .inline-image-preview .preview-prev,
+    .inline-image-preview .preview-next {
+      position: absolute;
+      top: 50%; transform: translateY(-50%);
+      width: 44px; height: 68px; border-radius: 8px;
+      background: rgba(0,0,0,0.35); color: #fff; border: none; cursor: pointer;
+      display:flex;align-items:center;justify-content:center;font-size:22px;
+      opacity: 0.9;
+    }
+    .inline-image-preview .preview-prev { left: 6px; }
+    .inline-image-preview .preview-next { right: 6px; }
+
+    /* Image modal (click to enlarge) */
+    .image-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(6,6,15,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease;
+    }
+    .image-modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .image-modal-box {
+      max-width: 92vw;
+      max-height: 92vh;
+      border-radius: 18px;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      position: relative;
+      background: rgba(10, 12, 22, 0.98);
+      box-shadow: 0 32px 90px rgba(0, 0, 0, 0.6);
+      padding: 18px;
+    }
+    .image-modal-inner {
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      overflow: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+    }
+    .image-modal-inner img {
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
+      object-fit: contain;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.2);
+      transition: transform 0.2s ease;
+      transform-origin: center center;
+      cursor: grab;
+    }
+    .image-modal-inner img:active {
+      cursor: grabbing;
+    }
+    .image-modal-zoom {
+      position: absolute;
+      top: 16px;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 0.5px solid var(--border);
+      background: rgba(0,0,0,0.45);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 24px;
+      z-index: 10;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+    .image-modal-zoom:hover {
+      transform: scale(1.05);
+      background: rgba(0,0,0,0.65);
+    }
+    .image-modal-zoom-out { right: 124px; }
+    .image-modal-zoom-in { right: 70px; }
+    .image-modal-close {
+      position: absolute;
+      top: 16px; right: 18px;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      border: 0.5px solid var(--border);
+      background: var(--bg3);
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      z-index: 10;
+    }
+    .image-modal-prev,
+    .image-modal-next {
+      position: absolute;
+      top: 50%;
+      width: 48px;
+      height: 72px;
+      border-radius: 14px;
+      border: 0.5px solid var(--border);
+      background: rgba(0,0,0,0.45);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 30px;
+      transform: translateY(-50%);
+      z-index: 10;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+    .image-modal-prev:hover,
+    .image-modal-next:hover {
+      transform: translateY(-50%) scale(1.03);
+      background: rgba(0,0,0,0.65);
+    }
+    .image-modal-prev { left: 12px; }
+    .image-modal-next { right: 12px; }
+    .image-modal-caption {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      right: 14px;
+      padding: 10px 14px;
+      background: rgba(0,0,0,0.45);
+      color: rgba(255,255,255,0.9);
+      font-size: 13px;
+      border-radius: 12px;
+      text-align: center;
+      line-height: 1.4;
+      z-index: 10;
+    }
+    .modal-image {
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .modal-image img {
+      width: 100%;
+      height: auto;
+      max-width: 100%;
+      border-radius: 16px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto 1.2rem;
+    }
+  </style>
+</head>
+
+<body>
+
+  <a class="skip-link" href="#hero">跳到主要内容</a>
+
+  <!-- ═══ MOUSE GLOW ═══ -->
+  <div id="mouse-glow"></div>
+
+  <!-- ═══ LIVING CANVAS ═══ -->
+  <canvas id="life-canvas"></canvas>
+
+  <!-- ═══ NAV ═══ -->
+  <nav aria-label="主导航">
+    <a href="#hero" class="nav-logo" aria-label="返回首页首屏">无限进步 ✦</a>
+    <ul class="nav-links">
+      <li><a href="#about">关于</a></li>
+      <li><a href="#works">作品</a></li>
+      <li><a href="#contact">联系</a></li>
+    </ul>
+  </nav>
+
+  <!-- ═══ HERO ═══ -->
+  <section id="hero">
+    <!-- floating tags -->
+    <div class="hero-eyebrow">// AI VISUAL CREATIVE & PROMPT DESIGNER</div>
+
+    <h1 class="hero-name">
+      <span class="animated-gradient-text">
+        <span class="text-content">用语言<br>召唤图像</span>
+      </span>
+    </h1>
+
+    <p class="hero-role">
+      专注 <span class="rotating-word" id="rotating-word">电商视觉</span> 的 Prompt 设计师，
+      用精准的词语构建视觉世界
+    </p>
+
+    <a href="#works" class="hero-cta ripple-container">
+      探索我的作品
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+
+    <div class="hero-badge">
+      <div class="pulse-dot"></div>
+      AVAILABLE FOR WORK
+    </div>
+
+    <div class="scroll-hint">
+      <span>SCROLL</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- ═══ ABOUT ═══ -->
+  <section id="about">
+    <div class="section-label">ABOUT ME</div>
+    <div class="about-grid reveal">
+
+      <div class="avatar-wrapper">
+        <div class="avatar-ring">
+          <!-- spinning dashed ring -->
+          <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="95" stroke="rgba(184,255,87,0.25)" stroke-width="0.5" stroke-dasharray="4 8"/>
+            <circle cx="100" cy="100" r="88" stroke="rgba(79,216,255,0.15)" stroke-width="0.5" stroke-dasharray="2 12"/>
+          </svg>
+          <!-- pulse rings -->
+          <div class="avatar-pulse"></div>
+          <div class="avatar-pulse"></div>
+          <div class="avatar-pulse"></div>
+          <!-- avatar image -->
+          <div class="avatar-img">
+            <!--
+              ╔════════════════════════════════════╗
+              ║  将下方 img 标签的 src 替换为你的  ║
+              ║  头像图片路径，然后删除             ║
+              ║  .avatar-placeholder 这个 div      ║
+              ╚════════════════════════════════════╝
+            -->
+            <img src="favicon.png" alt="Avatar" />
+          </div>
+        </div>
+        <div class="avatar-status">
+          <div class="pulse-dot"></div>
+          在线 · 接受合作
+        </div>
+      </div>
+
+      <div class="about-text">
+        <h2>我是罗金发<br><em>一名AI训练师</em></h2>
+        <!--
+          ↓ 在这里修改你的个人简介
+        -->
+        <p>
+          专注于通过 Prompt Engineering 驱动 AI 生成高质量商业视觉内容，覆盖电商主图、营销素材与创意概念图，深度理解品牌视觉语言与图像美学逻辑。
+        </p>
+        <p>
+          我相信一张好的图片始于一段精准的语言。每一组 Prompt 背后，都是对光线、构图、色调与情绪的系统思考。
+        </p>
+        <hr class="about-hr" />
+        <hr class="about-hr" />
+
+        <!-- Inline image preview placed under the two paragraphs -->
+        <div class="inline-image-preview" id="inline-image-preview" aria-hidden="true">
+          <div class="preview-inner">
+            <button class="preview-close" id="inline-preview-close" aria-label="关闭预览">×</button>
+            <button class="preview-prev" id="inline-preview-prev" aria-label="上一张">‹</button>
+            <img id="inline-preview-img" src="" alt="预览图片" />
+            <button class="preview-next" id="inline-preview-next" aria-label="下一张">›</button>
+          </div>
+        </div>
+        <div class="about-skills">
+          <span class="skill-tag">Prompt Engineering</span>
+          <span class="skill-tag">Midjourney</span>
+          <span class="skill-tag">DALL·E 3</span>
+          <span class="skill-tag">FLUX</span>
+          <span class="skill-tag">电商视觉</span>
+          <span class="skill-tag">营销设计</span>
+          <span class="skill-tag">创意合成</span>
+          <span class="skill-tag">品牌视觉</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══ WORKS ═══ -->
+  <section id="works">
+    <div class="works-header reveal">
+      <div>
+        <div class="section-label">SELECTED WORKS</div>
+        <h2 class="section-title">作品画廊</h2>
+      </div>
+      <div class="filter-tabs">
+        <button class="filter-btn active" data-filter="all">全部</button>
+        <button class="filter-btn" data-filter="ec">电商</button>
+        <button class="filter-btn" data-filter="marketing">营销</button>
+        <button class="filter-btn" data-filter="creative">创意</button>
+      </div>
+    </div>
+
+    <div class="gallery-grid reveal" id="gallery-grid">
+
+      <!-- CARD 1 -->
+      <div class="gallery-card reveal" data-cat="ec" data-id="0">
+          <div class="card-visual card-visual-1">
+            <img class="card-real-img" src="imageswork1.jpg" alt="高端护肤品主图"/>
+            <div class="img-hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>ADD IMAGE</span>
+            </div>
+          </div>
+        <div class="card-shimmer"></div>
+        <div class="card-overlay">
+          <span class="card-category cat-ec">电商设计</span>
+          <div class="card-title">高端护肤品主图</div>
+          <div class="card-desc">磨砂玻璃精华瓶 · 大理石台面 · 奢侈品摄影美学</div>
+          <button class="card-view-btn">查看完整 Prompt →</button>
+        </div>
+      </div>
+
+      <!-- CARD 2 -->
+      <div class="gallery-card reveal" data-cat="ec" data-id="1">
+        <div class="card-visual card-visual-2">
+          <img class="card-real-img" src="imageswork2.jpg" alt="运动鞋爆炸图"/>
+          <div class="img-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>ADD IMAGE</span>
+          </div>
+        </div>
+        <div class="card-shimmer"></div>
+        <div class="card-overlay">
+          <span class="card-category cat-ec">电商设计</span>
+          <div class="card-title">运动鞋爆炸分解图</div>
+          <div class="card-desc">3D 零件爆炸视图 · 纯黑背景 · Nike 广告美学</div>
+          <button class="card-view-btn">查看完整 Prompt →</button>
+        </div>
+      </div>
+
+      <!-- CARD 3 -->
+      <div class="gallery-card reveal" data-cat="marketing" data-id="2">
+        <div class="card-visual card-visual-3">
+          <img class="card-real-img" src="imageswork3.jpg" alt="夏日饮品促销KV"/>
+          <div class="img-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>ADD IMAGE</span>
+          </div>
+        </div>
+        <div class="card-shimmer"></div>
+        <div class="card-overlay">
+          <span class="card-category cat-marketing">营销素材</span>
+          <div class="card-title">夏日饮品促销 KV</div>
+          <div class="card-desc">热带海滩 · 逆光透明感 · 可口可乐夏季大片风格</div>
+          <button class="card-view-btn">查看完整 Prompt →</button>
+        </div>
+      </div>
+
+      <!-- CARD 4 -->
+      <div class="gallery-card reveal" data-cat="marketing" data-id="3">
+        <div class="card-visual card-visual-4">
+          <img class="card-real-img" src="imageswork4.jpg" alt="年终大促Banner"/>
+          <div class="img-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>ADD IMAGE</span>
+          </div>
+        </div>
+        <div class="card-shimmer"></div>
+        <div class="card-overlay">
+          <span class="card-category cat-marketing">营销素材</span>
+          <div class="card-title">年终大促 Banner</div>
+          <div class="card-desc">中式奢华礼盒 · 舞台聚光灯 · 年末促销视觉</div>
+          <button class="card-view-btn">查看完整 Prompt →</button>
+        </div>
+      </div>
+
+      <!-- CARD 5 -->
+      <div class="gallery-card reveal" data-cat="creative" data-id="4">
+        <div class="card-visual card-visual-5">
+          <img class="card-real-img" src="imageswork5.jpg" alt="洗衣机里的深海世界"/>
+          <div class="jelly"></div>
+          <div class="jelly"></div>
+          <div class="jelly"></div>
+          <div class="img-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>ADD IMAGE</span>
+          </div>
+        </div>
+        <div class="card-shimmer"></div>
+        <div class="card-overlay">
+          <span class="card-category cat-creative">创意设计</span>
+          <div class="card-title">洗衣机里的深海世界</div>
+          <div class="card-desc">圆形舷窗 = 深海入口 · 生物荧光 · 马格利特超现实美学</div>
+          <button class="card-view-btn">查看完整 Prompt →</button>
+        </div>
+      </div>
+
+      <!-- CARD 6 -->
+      <div class="gallery-card reveal" data-cat="creative" data-id="5">
+        <div class="card-visual card-visual-6">
+          <img class="card-real-img" src="imageswork6.jpg" alt="冰箱里住着一座小镇"/>
+          <div class="img-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>ADD IMAGE</span>
+          </div>
+        </div>
+        <div class="card-shimmer"></div>
+        <div class="card-overlay">
+          <span class="card-category cat-creative">创意设计</span>
+          <div class="card-title">机械鲸鱼里的微型城市</div>
+          <div class="card-desc">机械鲸鱼 = 赛博朋克 · 超现实主义 · 3D渲染效果</div>
+          <button class="card-view-btn">查看完整 Prompt →</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══ CONTACT ═══ -->
+  <section id="contact">
+    <div class="contact-inner reveal">
+      <div class="section-label" style="justify-content:center">GET IN TOUCH</div>
+      <h2 class="section-title">有合作想法？<br>随时聊聊</h2>
+      <p>感谢观看——欢迎联系。</p>
+      <div class="contact-links">
+        <!-- ↓ 修改为你的实际联系方式 -->
+        <a href="tel:13649495365" class="contact-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.34 1.78.65 2.61a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.47-1.22a2 2 0 0 1 2.11-.45c.83.31 1.71.53 2.61.65A2 2 0 0 1 22 16.92z"/></svg>
+          136-4949-5365
+        </a>
+        <a href="mailto:805705086@qq.com" class="contact-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,14 22,4"/></svg>
+          805705086@qq.com
+        </a>
+      </div>
+      <p class="footer-copy">© 2026 LUOJINFA · AI 视觉创意 · Prompt Designer</p>
+    </div>
+  </section>
+
+  <!-- ═══ PROMPT MODAL ═══ -->
+  <!-- ═══ CardSwap (pure JS) ═══ -->
+  <div class="card-swap-container" id="card-swap">
+    <div class="card" data-id="0">
+      <img src="imageswork1.jpg" alt="高端护肤品主图" />
+      <h3>高端护肤品主图</h3>
+      <p>磨砂瓶 · 金属滴管 · 奢华商业摄影风格</p>
+    </div>
+    <div class="card" data-id="1">
+      <img src="imageswork2.jpg" alt="运动鞋爆炸图" />
+      <h3>运动鞋爆炸图</h3>
+      <p>3D 零件分解 · 强烈对比 · 电商视觉</p>
+    </div>
+    <div class="card" data-id="2">
+      <img src="imageswork3.jpg" alt="夏日饮品促销 KV" />
+      <h3>夏日饮品促销 KV</h3>
+      <p>热带海滩 · 逆光透明感 · 营销大片</p>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-box" id="modal-box">
+      <button class="modal-close" id="modal-close">×</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       JAVASCRIPT
+  ═══════════════════════════════════════════ -->
+  <!-- Image viewer modal -->
+  <div class="image-modal-overlay" id="image-modal" aria-hidden="true">
+    <div class="image-modal-box" role="dialog" aria-modal="true">
+      <button class="image-modal-close" id="image-modal-close" aria-label="关闭图片预览">×</button>
+      <button class="image-modal-prev" id="image-modal-prev" aria-label="上一张">‹</button>
+      <button class="image-modal-next" id="image-modal-next" aria-label="下一张">›</button>
+      <button class="image-modal-zoom image-modal-zoom-out" id="image-modal-zoom-out" aria-label="缩小">−</button>
+      <button class="image-modal-zoom image-modal-zoom-in" id="image-modal-zoom-in" aria-label="放大">＋</button>
+      <div class="image-modal-inner">
+        <img id="image-modal-img" src="" alt="" />
+      </div>
+      <div class="image-modal-caption" id="image-modal-caption"></div>
+    </div>
+  </div>
+    <!-- GSAP CDN (required for CardSwap) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script>
+  /* ─── PROMPT DATA ─────────────────────────── */
+  const PROMPTS = [
+    {
+      title: "高端护肤品主图",
+      category: "电商设计", catClass: "cat-ec",
+      concept: "超写实商业摄影，展现磨砂玻璃质感与奢侈品美学，大理石台面赋予高级感。",
+      framework: {
+        "主体特征": "磨砂玻璃精华瓶，金属滴管，瓶身烫金字体，30ml规格",
+        "所在场景": "极简白色大理石台面，旁置两片玫瑰花瓣与水珠",
+        "艺术风格": "商业产品摄影，超写实渲染，奢侈品广告美学",
+        "光线方向": "左上方45°柔光箱，右侧补反光板，顶部轮廓光勾勒瓶身曲线",
+        "构图方式": "三分法居中略偏右，产品占60%，大量留白",
+        "色彩色调": "象牙白与冷米色为主，金色点缀，低饱和度高级冷调"
+      },
+      positive: `A 30ml frosted glass serum bottle with gold metallic dropper and embossed gold lettering, placed on a clean white marble surface with two fresh rose petals and a single water droplet nearby, luxury skincare commercial photography, ultra-realistic CGI render, soft 45-degree key light from upper left, subtle rim light defining bottle curves, rule-of-thirds composition with generous white space, ivory and cool beige palette, muted gold accent, clean high-end aesthetic --ar 1:1 --style raw --v 6`,
+      negative: `cluttered background, plastic look, warm yellow tones, busy props, lens flare, overexposed`
+    },
+    {
+      title: "运动鞋爆炸分解图",
+      category: "电商设计", catClass: "cat-ec",
+      concept: "3D零件爆炸图展示产品结构，纯黑背景对比强烈，类Nike官网视觉风格。",
+      framework: {
+        "主体特征": "白色网面跑鞋，亮橙色Logo，厚底气垫设计，鞋带蓬松",
+        "所在场景": "纯黑背景悬浮，鞋体零部件向四方分离爆炸展开",
+        "艺术风格": "3D产品爆炸分解图，电商科技感广告风，类Nike官网视觉",
+        "光线方向": "正面直打环形灯光，四周边缘补光，每个零件有独立轮廓光",
+        "构图方式": "中心对称爆炸式构图，主鞋居中，零件向外辐射",
+        "色彩色调": "主色纯白，点缀亮橙色，黑色背景极强对比，冷白色调"
+      },
+      positive: `White mesh running shoe with bright orange logo and thick air-cushion sole, exploded parts diagram style floating on pure black background, shoe components separated and radiating outward symmetrically, 3D product explosion render, Nike campaign aesthetic, front-facing ring light with individual rim lights on each component, perfect center-symmetric composition, pure white and vivid orange palette against deep black --ar 3:2`,
+      negative: `worn shoes, dirty, lifestyle context, soft pastel, gradient background, flat 2D`
+    },
+    {
+      title: "夏日饮品促销 KV",
+      category: "营销素材", catClass: "cat-marketing",
+      concept: "逆光顶光让饮料产生通透渴感，低角度仰拍让产品气势十足，直接激发消费欲望。",
+      framework: {
+        "主体特征": "透明玻璃杯装冰块与深红色气泡饮料，杯口点缀柠檬片与薄荷叶，杯身有水雾",
+        "所在场景": "热带海滩木质栈道，远景为模糊的蓝色海面与椰子树剪影",
+        "艺术风格": "夏日清爽广告摄影，类可口可乐夏季大片，Lifestyle商业摄影",
+        "光线方向": "正午顶光+逆光，强烈背光让饮料透明感爆发，冰块折射彩色光芒",
+        "构图方式": "低角度仰拍，饮料占前景1/3，海天背景形成景深",
+        "色彩色调": "深红与透明冰蓝为主，配热带绿，高饱和度高对比度，热情活力感"
+      },
+      positive: `A tall clear glass filled with ice and deep crimson sparkling drink, garnished with lemon slice and fresh mint, water condensation on glass, placed on tropical beach wooden boardwalk, blurred blue ocean and coconut tree silhouettes in background, summer refreshment commercial photography inspired by Coca-Cola summer campaign, strong overhead backlight making ice cubes refract colorful light and drink glow with transparency, low-angle close-up composition, vivid crimson and ice-blue palette with tropical green, high saturation high contrast energetic mood --ar 9:16`,
+      negative: `studio background, cold winter mood, dull colors, overcast light, cluttered scene`
+    },
+    {
+      title: "年终大促 Banner",
+      category: "营销素材", catClass: "cat-marketing",
+      concept: "中式奢华视觉，聚光灯戏剧感是关键。顶部留白为文案设计师的排版空间。",
+      framework: {
+        "主体特征": "金色礼盒堆叠（大中小三层），红色丝带蝴蝶结，表面烫金纹样",
+        "所在场景": "深红天鹅绒布景台，背景有金色碎纸屑与星光颗粒漂浮",
+        "艺术风格": "中国年末大促广告风格，奢华节日视觉，融合中式吉祥纹样的现代商业设计",
+        "光线方向": "从正上方打下的聚光灯，礼盒中心最亮，向四周渐暗形成舞台聚焦感",
+        "构图方式": "三角形稳定构图，礼盒垂直堆叠，留出上方1/3作为文字区",
+        "色彩色调": "中国红为主，金色为辅，深酒红背景，整体暖调奢华感"
+      },
+      positive: `Three stacked gold gift boxes in descending size with red silk ribbon bows and embossed golden auspicious patterns, deep crimson velvet surface, golden confetti and star particles floating in background, Chinese year-end sale luxury advertisement aesthetic, centered spotlight from directly above fading dramatically to edges for theatrical effect, triangular stable composition with upper third as text area, Chinese red dominant with gold accents, deep wine red background, warm opulent high-contrast lighting --ar 16:9`,
+      negative: `western christmas, cold blue tones, minimalist, sparse, plastic materials, flat lighting`
+    },
+    {
+      title: "洗衣机里的深海世界",
+      category: "创意设计", catClass: "cat-creative",
+      concept: "滚筒玻璃门 = 深海舷窗。机器外部真实普通，圆门内部是另一个宇宙。反差越强，奇幻感越震撼。",
+      framework: {
+        "主体特征": "白色家用洗衣机，圆形舷窗式玻璃门半开，门内空间延伸为深海——衣物化形为发光水母，袜子变成小丑鱼，泡沫变为珊瑚",
+        "所在场景": "普通家庭洗衣房（瓷砖地面、洗衣粉盒、晾衣架可见），机器外部完全真实",
+        "艺术风格": "超现实主义摄影合成，马格利特哲学荒诞美学，BBC纪录片深海摄影质感",
+        "光线方向": "洗衣房冷白日光灯打亮外壳；深海自发光——水母荧光蓝绿由内向外透出",
+        "构图方式": "正面平视构图，洗衣机圆门居于黄金比例中心，圆形门框即天然视觉引导圈",
+        "色彩色调": "机器外部冷灰白（现实感），门内深邃蓝黑+荧光蓝绿（奇幻感），两种色温在圆形边缘交界"
+      },
+      positive: `A white household washing machine in an ordinary tiled laundry room with detergent boxes and drying rack visible, the circular porthole door slightly ajar, but inside the drum is an infinite deep ocean — tumbling laundry transformed into bioluminescent jellyfish, socks morphed into clownfish, detergent foam become coral and rising bubble columns, surrealist photography composite in the style of René Magritte, BBC Planet Earth deep sea photography quality, cold white fluorescent light on machine exterior while deep sea glows with its own blue-green bioluminescence projecting an azure halo onto the white shell, front-facing eye-level composition with round porthole centered at golden ratio, cool gray-white exterior versus deep abyss blue-black with bioluminescent cyan-green interior --ar 3:4 --v 6 --stylize 800`,
+      negative: `cartoon, anime, destroyed machine, horror, dark room, full CGI, no laundry room context, oversaturated`
+    },
+    {
+      title: "冰箱里住着一座小镇",
+      category: "创意设计", catClass: "cat-creative",
+      concept: "冰箱灯 = 夕阳。一点透视+门框即画框，最大化纵深感。三位导演美学叠加，精准收窄画面气质。",
+      framework: {
+        "主体特征": "家用冰箱门半开，门内空间延伸为山谷小镇——蔬菜层化为梯田，牛奶瓶变成灯塔，鸡蛋托变成鹅卵石广场，隔层玻璃变成云海",
+        "所在场景": "现代厨房夜晚，厨房整体昏暗，冰箱内小镇是黄昏，居民炊烟袅袅",
+        "艺术风格": "宫崎骏+新海诚动画美学写实渲染版，带Wes Anderson对称美学，融入细密画叙事感",
+        "光线方向": "冰箱内小镇黄昏侧光，橙金色夕阳从小镇深处升起（冰箱灯=夕阳光源），暖光向厨房外溢",
+        "构图方式": "一点透视纵深构图，冰箱门框即画框，视线沿透视线穿入小镇深处，近处食物清晰，远处渐入夕阳薄雾",
+        "色彩色调": "厨房外部冷青灰（夜晚），冰箱内橙金暖调（黄昏），冷暖强对比；小镇色彩丰富如日本秋日风景画"
+      },
+      positive: `A half-open household refrigerator door in a dark modern kitchen at night, inside the fridge space expands infinitely into a miniature mountain valley town at golden hour — vegetable drawers transformed into stone terrace rice fields, milk bottles become coastal lighthouses, egg tray morphs into cobblestone town square, glass shelves become mid-mountain cloud layers, tiny human figures working in fields, chimney smoke rising, Studio Ghibli meets Makoto Shinkai animation aesthetic rendered photorealistically with Wes Anderson symmetrical calm and miniature painting narrative detail, warm golden sunset sourced from deep within the town (the fridge light IS the setting sun) casting warm rectangular orange glow on dark kitchen floor, one-point perspective with fridge door frame as picture frame, dark cool blue-gray kitchen exterior contrasting with warm amber-gold interior, rich autumnal Japanese palette inside --ar 2:3 --v 6 --stylize 900`,
+      negative: `horror, abandoned, broken fridge, sci-fi, cold blue interior, empty fridge, dark town, oversized people`
+    }
+  ];
+
+  /* ─── AUDIO ENGINE ────────────────────────── */
+  let audioCtx = null;
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  function playClick(freq = 600, dur = 0.09) {
+    try {
+      ensureAudio();
+      const osc  = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = freq;
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.3, audioCtx.currentTime + dur);
+      gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + dur);
+    } catch(e) {}
+  }
+
+  function playHover() {
+    try {
+      ensureAudio();
+      const osc  = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(900, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.06);
+    } catch(e) {}
+  }
+
+  let lastScrollSound = 0;
+  function playScroll() {
+    const now = Date.now();
+    if (now - lastScrollSound < 120) return;
+    lastScrollSound = now;
+    try {
+      ensureAudio();
+      const osc  = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(220 + Math.random() * 80, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.07);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.07);
+    } catch(e) {}
+  }
+
+  /* ─── MOUSE GLOW ─────────────────────────── */
+  const glowEl = document.getElementById('mouse-glow');
+  if (glowEl) {
+    let glowX = window.innerWidth / 2, glowY = window.innerHeight / 2;
+    let glowCurrX = glowX, glowCurrY = glowY;
+
+    document.addEventListener('mousemove', e => {
+      glowX = e.clientX;
+      glowY = e.clientY;
+    });
+
+    function animateGlow() {
+      glowCurrX += (glowX - glowCurrX) * 0.1;
+      glowCurrY += (glowY - glowCurrY) * 0.1;
+      glowEl.style.transform = `translate(calc(${glowCurrX}px - 50%), calc(${glowCurrY}px - 50%))`;
+      requestAnimationFrame(animateGlow);
+    }
+    animateGlow();
+  }
+
+  /* ─── LIVING CANVAS (organic particles) ──── */
+  const canvas = document.getElementById('life-canvas');
+  const ctx = canvas ? (canvas.getContext ? canvas.getContext('2d') : null) : null;
+  let W, H;
+
+  if (canvas && ctx) {
+    function resizeCanvas() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    class Organism {
+    constructor() { this.reset(true); }
+    reset(init = false) {
+      this.x  = Math.random() * W;
+      this.y  = init ? Math.random() * H : (Math.random() < 0.5 ? -20 : H + 20);
+      this.vx = (Math.random() - 0.5) * 0.6;
+      this.vy = (Math.random() - 0.5) * 0.6;
+      this.r  = Math.random() * 2 + 1;
+      this.life    = 0;
+      this.maxLife = 300 + Math.random() * 400;
+      this.angle   = Math.random() * Math.PI * 2;
+      this.speed   = Math.random() * 0.4 + 0.1;
+      // color: lime, cyan, or magenta tint
+      const palette = [
+        [184,255,87], [79,216,255], [255,87,168]
+      ];
+      this.color = palette[Math.floor(Math.random() * palette.length)];
+    }
+    update() {
+      this.angle += (Math.random() - 0.5) * 0.06;
+      this.vx += Math.cos(this.angle) * 0.02;
+      this.vy += Math.sin(this.angle) * 0.02;
+      const speed = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
+      if (speed > this.speed) {
+        this.vx = (this.vx / speed) * this.speed;
+        this.vy = (this.vy / speed) * this.speed;
+      }
+      this.x += this.vx;
+      this.y += this.vy;
+      this.life++;
+      if (this.life > this.maxLife || this.x < -50 || this.x > W+50 || this.y < -50 || this.y > H+50) {
+        this.reset();
+      }
+    }
+    draw() {
+      const progress = this.life / this.maxLife;
+      const alpha = Math.sin(progress * Math.PI) * 0.6;
+      const [r,g,b] = this.color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+      ctx.fill();
+    }
+  }
+
+    const organisms = Array.from({length: 90}, () => new Organism());
+
+    function drawConnections() {
+    for (let i = 0; i < organisms.length; i++) {
+      for (let j = i + 1; j < organisms.length; j++) {
+        const a = organisms[i], b = organisms[j];
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 100) {
+          const alpha = (1 - dist / 100) * 0.08;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = `rgba(79,216,255,${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+    function loopCanvas() {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, W, H);
+      organisms.forEach(o => { o.update(); o.draw(); });
+      drawConnections();
+      requestAnimationFrame(loopCanvas);
+    }
+    loopCanvas();
+  }
+
+  /* ─── ROTATING WORD ──────────────────────── */
+  const words = ['电商视觉', '营销素材', '创意合成', '品牌视觉', '概念艺术'];
+  let wordIdx = 0;
+  const wordEl = document.getElementById('rotating-word');
+  if (wordEl) {
+    function rotateWord() {
+      wordEl.style.opacity = '0';
+      wordEl.style.transform = 'translateY(-8px)';
+      setTimeout(() => {
+        wordIdx = (wordIdx + 1) % words.length;
+        wordEl.textContent = words[wordIdx];
+        wordEl.style.transition = 'opacity 0.4s, transform 0.4s';
+        wordEl.style.opacity = '1';
+        wordEl.style.transform = 'translateY(0)';
+      }, 300);
+    }
+    wordEl.style.transition = 'opacity 0.4s, transform 0.4s';
+    setInterval(rotateWord, 2500);
+  }
+
+  /* ─── SCROLL REVEAL ──────────────────────── */
+  const revealEls = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window && revealEls.length) {
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          entry.target.style.transitionDelay = `${i * 0.05}s`;
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    revealEls.forEach(el => revealObserver.observe(el));
+  } else {
+    // fallback: make reveals visible if observer isn't available
+    revealEls.forEach(el => el.classList.add('visible'));
+  }
+
+  /* ─── GALLERY FILTER ─────────────────────── */
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      playClick(500);
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      const filter = this.dataset.filter;
+      document.querySelectorAll('.gallery-card').forEach(card => {
+        if (filter === 'all' || card.dataset.cat === filter) {
+          card.style.display = '';
+          card.style.animation = 'fadeUp 0.5s forwards';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+    btn.addEventListener('mouseenter', playHover);
+  });
+
+  /* ─── RIPPLE EFFECT ──────────────────────── */
+  function addRipple(el, e) {
+    const rect = el.getBoundingClientRect();
+    const ripple = document.createElement('div');
+    ripple.className = 'ripple';
+    const size = Math.max(rect.width, rect.height);
+    ripple.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - rect.left - size/2}px;top:${e.clientY - rect.top - size/2}px`;
+    el.appendChild(ripple);
+    ripple.addEventListener('animationend', () => ripple.remove());
+  }
+
+  /* ─── CLICK SOUNDS EVERYWHERE ───────────────── */
+  document.addEventListener('click', (e) => {
+    playClick(600 + Math.random() * 200);
+    // ripple on ripple-containers
+    const rc = e.target.closest('.ripple-container');
+    if (rc) addRipple(rc, e);
+  });
+
+  /* ─── HOVER SOUNDS ON INTERACTIVE ELEMENTS ── */
+  document.querySelectorAll('a, button, .gallery-card, .skill-tag').forEach(el => {
+    el.addEventListener('mouseenter', playHover);
+  });
+
+  /* ─── SCROLL SOUND ────────────────────────── */
+  window.addEventListener('scroll', playScroll, { passive: true });
+
+  /* ─── MODAL LOGIC ────────────────────────── */
+  const overlay  = document.getElementById('modal-overlay');
+  const modalContent = document.getElementById('modal-content');
+  const modalClose = document.getElementById('modal-close');
+
+  function openModal(id) {
+    const data = PROMPTS[id];
+    if (!data) return;
+    const fwHTML = Object.entries(data.framework).map(([k,v]) =>
+      `<div class="fw-row"><div class="fw-key">${k}</div><div class="fw-val">${v}</div></div>`
+    ).join('');
+    // Try to find associated image from gallery card
+    let imgSrc = '';
+    const galleryCard = document.querySelector(`.gallery-card[data-id="${id}"]`);
+    if (galleryCard) {
+      const imgEl = galleryCard.querySelector('.card-real-img');
+      if (imgEl) imgSrc = imgEl.src || '';
+    }
+
+    modalContent.innerHTML = `
+      ${imgSrc ? `<div class="modal-image"><img src="${imgSrc}" alt="${data.title}"/></div>` : ''}
+      <span class="modal-category ${data.catClass}">${data.category}</span>
+      <h2 class="modal-title">${data.title}</h2>
+      <p class="modal-concept">${data.concept}</p>
+      <div class="fw-grid">${fwHTML}</div>
+      <div class="prompt-section">
+        <div class="prompt-section-label">Positive Prompt</div>
+        <div class="prompt-section-text">${data.positive}</div>
+      </div>
+      <div class="prompt-section" style="margin-top:10px;">
+        <div class="prompt-section-label">Negative Prompt</div>
+        <div class="prompt-section-text neg">${data.negative}</div>
+      </div>
+    `;
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    playClick(400, 0.15);
+  }
+      /* CardSwap — plain JS implementation using GSAP
+         Mirrors core behavior of React CardSwap variant. */
+      (function(){
+        if (typeof gsap === 'undefined') return;
+        const container = document.getElementById('card-swap');
+        if (!container) return;
+
+        const cards = Array.from(container.querySelectorAll('.card'));
+        const cardDistance = 60;
+        const verticalDistance = 70;
+        const delay = 5000;
+        const skewAmount = 6;
+        let order = cards.map((_, i) => i);
+        let tl = null;
+        let interval = null;
+
+        const makeSlot = (i, distX, distY, total) => ({
+          x: i * distX,
+          y: -i * distY,
+          z: -i * distX * 1.5,
+          zIndex: total - i
+        });
+
+        const placeNow = (el, slot, skew) => gsap.set(el, {
+          x: slot.x,
+          y: slot.y,
+          z: slot.z,
+          xPercent: -50,
+          yPercent: -50,
+          skewY: skew,
+          transformOrigin: 'center center',
+          zIndex: slot.zIndex,
+          force3D: true
+        });
+
+        function setup() {
+          const total = cards.length;
+          cards.forEach((card, i) => placeNow(card, makeSlot(i, cardDistance, verticalDistance, total), skewAmount));
+        }
+
+        function swap() {
+          if (order.length < 2) return;
+          const [front, ...rest] = order;
+          const elFront = cards[front];
+          const total = cards.length;
+          const config = { ease: 'elastic.out(0.6,0.9)', durDrop: 1.2, durMove: 1.2, durReturn: 1.2, promoteOverlap: 0.9, returnDelay: 0.05 };
+          tl = gsap.timeline();
+
+          tl.to(elFront, { y: '+=500', duration: config.durDrop, ease: config.ease });
+          tl.addLabel('promote', `-=${config.durDrop * config.promoteOverlap}`);
+
+          rest.forEach((idx, i) => {
+            const el = cards[idx];
+            const slot = makeSlot(i, cardDistance, verticalDistance, total);
+            tl.set(el, { zIndex: slot.zIndex }, 'promote');
+            tl.to(el, { x: slot.x, y: slot.y, z: slot.z, duration: config.durMove, ease: config.ease }, `promote+=${i * 0.12}`);
+          });
+
+          const backSlot = makeSlot(total - 1, cardDistance, verticalDistance, total);
+          tl.addLabel('return', `promote+=${config.durMove * config.returnDelay}`);
+          tl.call(() => gsap.set(elFront, { zIndex: backSlot.zIndex }), undefined, 'return');
+          tl.to(elFront, { x: backSlot.x, y: backSlot.y, z: backSlot.z, duration: config.durReturn, ease: config.ease }, 'return');
+
+          tl.call(() => { order = [...rest, front]; });
+        }
+
+        setup();
+        interval = setInterval(swap, delay);
+
+        // pause on hover behavior (keeps simple)
+        container.addEventListener('mouseenter', () => { tl?.pause(); clearInterval(interval); });
+        container.addEventListener('mouseleave', () => { tl?.play(); interval = setInterval(swap, delay); });
+
+        // card click callback example — open modal with prompt content if needed
+        cards.forEach((card, idx) => {
+          card.addEventListener('click', (e) => {
+            const id = +card.dataset.id;
+            // try to reuse existing openModal if available
+            if (window.openModal) {
+              window.openModal(id);
+            } else {
+              // small visual feedback
+              gsap.fromTo(card, { scale: 0.98 }, { scale: 1, duration: 0.25, ease: 'power2.out' });
+            }
+          });
+        });
+
+        // Visibility: only show when #hero is in view (mimics "只能在这个画面显示")
+        const hero = document.getElementById('hero');
+        function updateVisibility(inView) {
+          // keep hidden on small screens
+          if (window.innerWidth <= 900) {
+            container.classList.remove('visible', 'scale-2');
+            return;
+          }
+          if (inView) container.classList.add('visible', 'scale-2');
+          else container.classList.remove('visible', 'scale-2');
+        }
+
+        if (hero && 'IntersectionObserver' in window) {
+          const heroObs = new IntersectionObserver((entries) => {
+            entries.forEach(en => updateVisibility(en.isIntersecting));
+          }, { threshold: 0.5 });
+          heroObs.observe(hero);
+          // initial
+          const rect = hero.getBoundingClientRect();
+          updateVisibility(rect.top < window.innerHeight && rect.bottom > 0);
+        } else {
+          // fallback: visible on large screens
+          updateVisibility(true);
+        }
+
+        window.addEventListener('resize', () => {
+          const rect = hero ? hero.getBoundingClientRect() : null;
+          updateVisibility(rect ? (rect.top < window.innerHeight && rect.bottom > 0) : true);
+        });
+      })();
+
+
+  function closeModal() {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    playClick(300, 0.08);
+  }
+
+  document.querySelectorAll('.gallery-card').forEach(card => {
+    card.addEventListener('click', () => openModal(+card.dataset.id));
+  });
+
+  modalClose.addEventListener('click', closeModal);
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeModal();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  /* ─── ClickSpark (点击火花效果) ───────────────── */
+  (function(){
+    const root = document.documentElement;
+    const sparkColor = getComputedStyle(root).getPropertyValue('--lime').trim() || '#b8ff57';
+    const sparkCount = 10;
+    const sparkSize = 30; // initial length
+    const sparkRadius = 45; // travel distance
+    const duration = 600; // ms
+
+    const canvas = document.createElement('canvas');
+    canvas.id = 'click-spark-canvas';
+    canvas.style.position = 'fixed';
+    canvas.style.left = '0';
+    canvas.style.top = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.zIndex = 1200;
+    document.body.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d');
+    const DPR = window.devicePixelRatio || 1;
+    function resizeCanvas() {
+      canvas.width = Math.max(1, window.innerWidth * DPR);
+      canvas.height = Math.max(1, window.innerHeight * DPR);
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const sparks = [];
+
+    function easeOutQuad(t){ return t*(2-t); }
+
+    function addSparks(x,y){
+      const now = performance.now();
+      for(let i=0;i<sparkCount;i++){
+        sparks.push({
+          x, y,
+          angle: (2*Math.PI*i)/sparkCount + (Math.random()-0.5)*0.3,
+          start: now
+        });
+      }
+    }
+
+    window.addEventListener('click', (e)=>{
+      // ignore clicks on inputs? still show
+      const x = e.clientX;
+      const y = e.clientY;
+      addSparks(x,y);
+    }, {passive:true});
+
+    function draw(now){
+      ctx.clearRect(0,0, window.innerWidth, window.innerHeight);
+      for(let i=sparks.length-1;i>=0;i--){
+        const s = sparks[i];
+        const elapsed = now - s.start;
+        if (elapsed >= duration) { sparks.splice(i,1); continue; }
+        const t = elapsed / duration;
+        const eased = easeOutQuad(t);
+        const distance = eased * sparkRadius;
+        const lineLen = sparkSize * (1 - eased);
+        const x1 = s.x + distance * Math.cos(s.angle);
+        const y1 = s.y + distance * Math.sin(s.angle);
+        const x2 = s.x + (distance + lineLen) * Math.cos(s.angle);
+        const y2 = s.y + (distance + lineLen) * Math.sin(s.angle);
+
+        ctx.strokeStyle = sparkColor;
+        ctx.globalAlpha = 1 - eased;
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(draw);
+    }
+    requestAnimationFrame(draw);
+  })();
+
+    /* ─── Image modal logic ───────────────────── */
+    (function(){
+      const modal = document.getElementById('image-modal');
+      const img = document.getElementById('image-modal-img');
+      const caption = document.getElementById('image-modal-caption');
+      const closeBtn = document.getElementById('image-modal-close');
+      const prevBtn = document.getElementById('image-modal-prev');
+      const nextBtn = document.getElementById('image-modal-next');
+      const galleryCards = Array.from(document.querySelectorAll('.gallery-card'));
+      let currentId = null;
+
+      if (!modal || !img || !closeBtn) return;
+
+      let zoomLevel = 1;
+      const minZoom = 1;
+      const maxZoom = 3;
+      const zoomStep = 0.2;
+
+      function applyZoom() {
+        img.style.transform = `scale(${zoomLevel})`;
+      }
+
+      function resetZoom() {
+        zoomLevel = 1;
+        applyZoom();
+      }
+
+      function openImage(id) {
+        const card = galleryCards.find(c => +c.dataset.id === +id);
+        if (!card) return;
+        const imgEl = card.querySelector('.card-real-img');
+        if (!imgEl) return;
+        currentId = +id;
+        img.src = imgEl.src;
+        img.alt = imgEl.alt || '';
+        caption.textContent = imgEl.alt || card.querySelector('.card-title')?.textContent || '';
+        resetZoom();
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden','false');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function changeImage(delta) {
+        if (currentId === null) return;
+        const nextId = (currentId + delta + galleryCards.length) % galleryCards.length;
+        openImage(nextId);
+      }
+
+      function changeZoom(delta) {
+        zoomLevel = Math.min(maxZoom, Math.max(minZoom, zoomLevel + delta));
+        applyZoom();
+      }
+
+      function closeImage(){
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden','true');
+        img.src = '';
+        currentId = null;
+        resetZoom();
+        document.body.style.overflow = '';
+      }
+
+      closeBtn.addEventListener('click', closeImage);
+      if (prevBtn) prevBtn.addEventListener('click', (e) => { e.stopPropagation(); changeImage(-1); });
+      if (nextBtn) nextBtn.addEventListener('click', (e) => { e.stopPropagation(); changeImage(1); });
+      if (document.getElementById('image-modal-zoom-out')) {
+        document.getElementById('image-modal-zoom-out').addEventListener('click', (e) => { e.stopPropagation(); changeZoom(-zoomStep); });
+      }
+      if (document.getElementById('image-modal-zoom-in')) {
+        document.getElementById('image-modal-zoom-in').addEventListener('click', (e) => { e.stopPropagation(); changeZoom(zoomStep); });
+      }
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeImage();
+      });
+      modal.addEventListener('wheel', (e) => {
+        if (!modal.classList.contains('open')) return;
+        e.preventDefault();
+        changeZoom(e.deltaY < 0 ? zoomStep : -zoomStep);
+      }, { passive: false });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeImage();
+        if (e.key === 'ArrowLeft') changeImage(-1);
+        if (e.key === 'ArrowRight') changeImage(1);
+        if (e.key === '+' || e.key === '=') changeZoom(zoomStep);
+        if (e.key === '-') changeZoom(-zoomStep);
+      });
+
+      document.querySelectorAll('.card-real-img').forEach(i => {
+        i.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const card = i.closest('.gallery-card');
+          const id = card ? +card.dataset.id : null;
+          if (id !== null) openImage(id);
+        });
+        i.style.cursor = 'zoom-in';
+      });
+    })();
+
+  /* ─── NAV HOVER SOUND ────────────────────── */
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    a.addEventListener('mouseenter', playHover);
+  });
+
+  </script>
+</body>
+</html>
